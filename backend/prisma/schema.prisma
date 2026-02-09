@@ -1,0 +1,470 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  SUPER_MASTER_AGENT
+  MASTER_AGENT
+  AGENT
+  PLAYER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+  PENDING
+}
+
+enum AgentType {
+  SUPER_MASTER
+  MASTER
+  AGENT
+}
+
+enum MatchStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+enum MatchType {
+  TEST
+  ODI
+  T20
+  T10
+  HUNDRED
+  DOMESTIC
+}
+
+enum BetType {
+  MATCH_WINNER
+  TOP_BATSMAN
+  TOP_BOWLER
+  TOTAL_RUNS
+  TOTAL_WICKETS
+  PLAYER_PERFORMANCE
+  SESSION
+  FANCY
+  OVER_UNDER
+  PARLAY
+}
+
+enum BetStatus {
+  PENDING
+  WON
+  LOST
+  CANCELLED
+  VOID
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  BET_PLACED
+  BET_WON
+  BET_LOST
+  BET_REFUND
+  COMMISSION_EARNED
+  CREDIT_TRANSFER
+  DEBIT_TRANSFER
+  ADJUSTMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id                String          @id @default(uuid())
+  username          String          @unique
+  email             String?         @unique
+  phone             String?         @unique
+  password          String
+  displayName       String?
+  role              UserRole        @default(PLAYER)
+  status            UserStatus      @default(ACTIVE)
+
+  // Financial
+  balance           Decimal         @default(0) @db.Decimal(12, 2)
+  creditLimit       Decimal         @default(0) @db.Decimal(12, 2)
+  totalDeposited    Decimal         @default(0) @db.Decimal(12, 2)
+  totalWithdrawn    Decimal         @default(0) @db.Decimal(12, 2)
+
+  // Relationships
+  agentId           String?
+  agent             Agent?          @relation("AgentPlayers", fields: [agentId], references: [id])
+
+  // Betting
+  bets              Bet[]
+  transactions      Transaction[]
+
+  // Tracking
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+  loginAttempts     Int             @default(0)
+  lockedUntil       DateTime?
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdBy         String?
+
+  @@index([username])
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Agent {
+  id                String          @id @default(uuid())
+  username          String          @unique
+  email             String?         @unique
+  phone             String          @unique
+  password          String
+  displayName       String
+  agentType         AgentType
+  status            UserStatus      @default(PENDING)
+
+  // Hierarchy
+  parentAgentId     String?
+  parentAgent       Agent?          @relation("AgentHierarchy", fields: [parentAgentId], references: [id])
+  subAgents         Agent[]         @relation("AgentHierarchy")
+
+  // Financial
+  balance           Decimal         @default(0) @db.Decimal(12, 2)
+  creditLimit       Decimal         @default(0) @db.Decimal(12, 2)
+  riskDeposit       Decimal         @default(0) @db.Decimal(12, 2)
+
+  // Commission
+  commissionRate    Decimal         @default(0) @db.Decimal(5, 2)
+  totalCommission   Decimal         @default(0) @db.Decimal(12, 2)
+
+  // Players
+  players           User[]          @relation("AgentPlayers")
+
+  // Transactions
+  transactions      Transaction[]
+  commissionsEarned Commission[]    @relation("AgentCommissions")
+
+  // KYC
+  kycDocuments      Json?
+  kycVerified       Boolean         @default(false)
+  kycVerifiedAt     DateTime?
+
+  // Limits
+  maxPlayersAllowed Int             @default(100)
+  maxExposure       Decimal         @default(100000) @db.Decimal(12, 2)
+
+  // Tracking
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdBy         String?
+
+  @@index([agentType])
+  @@index([parentAgentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("agents")
+}
+
+model Match {
+  id                String          @id @default(uuid())
+  cricketApiId      String?         @unique
+
+  // Match Details
+  name              String
+  shortName         String?
+  matchType         MatchType
+  venue             String?
+  city              String?
+  country           String?
+
+  // Teams
+  team1             String
+  team2             String
+  team1Logo         String?
+  team2Logo         String?
+
+  // Tournament
+  tournament        String
+  tournamentId      String?
+  series            String?
+
+  // Timing
+  startTime         DateTime
+  endTime           DateTime?
+
+  // Status
+  status            MatchStatus     @default(UPCOMING)
+
+  // Results
+  tossWinner        String?
+  tossDecision      String?
+  matchWinner       String?
+  winType           String?
+  winMargin         String?
+
+  // Scores
+  team1Score        String?
+  team2Score        String?
+
+  // Additional Data
+  manOfTheMatch     String?
+  umpires           Json?
+
+  // Betting
+  bets              Bet[]
+  totalBetsAmount   Decimal         @default(0) @db.Decimal(12, 2)
+  totalBetsCount    Int             @default(0)
+
+  // Sync
+  lastSyncedAt      DateTime?
+  syncErrors        Json?
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([status])
+  @@index([startTime])
+  @@index([tournament])
+  @@index([cricketApiId])
+  @@map("matches")
+}
+
+model Bet {
+  id                String          @id @default(uuid())
+
+  // User & Match
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  matchId           String
+  match             Match           @relation(fields: [matchId], references: [id])
+
+  // Bet Details
+  betType           BetType
+  betOn             String
+  description       String?
+
+  // Financial
+  amount            Decimal         @db.Decimal(12, 2)
+  odds              Decimal         @db.Decimal(8, 2)
+  potentialWin      Decimal         @db.Decimal(12, 2)
+  actualWin         Decimal?        @db.Decimal(12, 2)
+
+  // Status
+  status            BetStatus       @default(PENDING)
+
+  // Settlement
+  settledAt         DateTime?
+  settledBy         String?
+  settlementNote    String?
+
+  // Metadata
+  ipAddress         String?
+  userAgent         String?
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Commissions
+  commissions       Commission[]
+
+  @@index([userId])
+  @@index([matchId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("bets")
+}
+
+model Transaction {
+  id                String              @id @default(uuid())
+
+  // Reference
+  userId            String?
+  user              User?               @relation(fields: [userId], references: [id])
+  agentId           String?
+  agent             Agent?              @relation(fields: [agentId], references: [id])
+
+  // Transaction Details
+  type              TransactionType
+  status            TransactionStatus   @default(PENDING)
+  amount            Decimal             @db.Decimal(12, 2)
+
+  // Balance Tracking
+  balanceBefore     Decimal             @db.Decimal(12, 2)
+  balanceAfter      Decimal             @db.Decimal(12, 2)
+
+  // Reference
+  referenceId       String?
+  referenceType     String?
+
+  // Processing
+  processedBy       String?
+  processedAt       DateTime?
+
+  // Description
+  description       String?
+  notes             String?
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model Commission {
+  id                String          @id @default(uuid())
+
+  // References
+  betId             String
+  bet               Bet             @relation(fields: [betId], references: [id])
+  agentId           String
+  agent             Agent           @relation("AgentCommissions", fields: [agentId], references: [id])
+
+  // Commission Details
+  commissionAmount  Decimal         @db.Decimal(12, 2)
+  commissionRate    Decimal         @db.Decimal(5, 2)
+  basedOnAmount     Decimal         @db.Decimal(12, 2)
+
+  // Agent Level
+  agentLevel        AgentType
+
+  // Status
+  paid              Boolean         @default(false)
+  paidAt            DateTime?
+
+  // Metadata
+  calculatedAt      DateTime        @default(now())
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([betId])
+  @@index([agentId])
+  @@index([paid])
+  @@index([createdAt])
+  @@map("commissions")
+}
+
+model Configuration {
+  id                String          @id @default(uuid())
+  key               String          @unique
+  value             String
+  dataType          String          @default("string")
+  category          String          @default("general")
+  description       String?
+  isEditable        Boolean         @default(true)
+  updatedBy         String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([key])
+  @@index([category])
+  @@map("configurations")
+}
+
+model AuditLog {
+  id                String          @id @default(uuid())
+
+  userId            String?
+  userType          String?
+  username          String?
+
+  action            String
+  resource          String
+  resourceId        String?
+
+  changes           Json?
+  ipAddress         String?
+  userAgent         String?
+
+  createdAt         DateTime        @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Session {
+  id                String          @id @default(uuid())
+  userId            String?
+  agentId           String?
+  token             String          @unique
+  refreshToken      String?         @unique
+  ipAddress         String?
+  userAgent         String?
+  expiresAt         DateTime
+  createdAt         DateTime        @default(now())
+  lastActivityAt    DateTime        @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@index([agentId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Notification {
+  id                String          @id @default(uuid())
+  userId            String?
+  agentId           String?
+
+  title             String
+  message           String
+  type              String
+  category          String?
+
+  read              Boolean         @default(false)
+  readAt            DateTime?
+
+  actionUrl         String?
+  actionLabel       String?
+
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
