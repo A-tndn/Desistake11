@@ -69,3 +69,37 @@ export const getMasterAllPlayers = asyncHandler(async (req: AuthRequest, res: Re
   const players = await agentService.getMasterAgentAllPlayers(agentId);
   successResponse(res, 'All hierarchy players retrieved', players);
 });
+
+// Agent Reports
+export const getAccountStatement = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const agentId = req.user!.id;
+  const { from, to, type } = req.query;
+  const transactions = await agentService.getAgentAccountStatement(agentId, {
+    from: from as string,
+    to: to as string,
+    type: type as string,
+  });
+  successResponse(res, 'Account statement retrieved', transactions);
+});
+
+export const getBetHistory = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const agentId = req.user!.id;
+  const { status, matchId } = req.query;
+  const bets = await agentService.getAgentBetHistory(agentId, {
+    status: status as string,
+    matchId: matchId as string,
+  });
+  successResponse(res, 'Bet history retrieved', bets);
+});
+
+export const getClientLedger = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const agentId = req.user!.id;
+  const ledger = await agentService.getAgentClientLedger(agentId);
+  successResponse(res, 'Client ledger retrieved', ledger);
+});
+
+export const getCommissionReport = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const agentId = req.user!.id;
+  const commissions = await agentService.getAgentCommissionReport(agentId);
+  successResponse(res, 'Commission report retrieved', commissions);
+});

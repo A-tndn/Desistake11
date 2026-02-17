@@ -77,35 +77,47 @@ export default function AgentDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className={`grid grid-cols-1 md:grid-cols-3 ${(user?.role === 'MASTER' || user?.role === 'SUPER_MASTER') ? 'lg:grid-cols-4' : ''} gap-4 mb-8`}>
-              <button
-                onClick={() => router.push('/agent/players')}
-                className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition text-left"
-              >
-                <h3 className="font-semibold text-gray-900 mb-1">Manage Players</h3>
-                <p className="text-sm text-gray-500">Create and manage player accounts</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+              <button onClick={() => router.push('/agent/players')}
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Manage Players</h3>
+                <p className="text-xs sm:text-sm text-gray-500">Create and manage accounts</p>
               </button>
-              <button
-                onClick={() => router.push('/agent/credits')}
-                className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition text-left"
-              >
-                <h3 className="font-semibold text-gray-900 mb-1">Credit Management</h3>
-                <p className="text-sm text-gray-500">Transfer or deduct credits</p>
+              <button onClick={() => router.push('/agent/credits')}
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Credits</h3>
+                <p className="text-xs sm:text-sm text-gray-500">Transfer or deduct credits</p>
               </button>
-              <button
-                onClick={() => router.push('/matches')}
-                className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition text-left"
-              >
-                <h3 className="font-semibold text-gray-900 mb-1">View Matches</h3>
-                <p className="text-sm text-gray-500">See upcoming and live matches</p>
+              <button onClick={() => router.push('/agent/account-statement')}
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Account Statement</h3>
+                <p className="text-xs sm:text-sm text-gray-500">View all transactions</p>
+              </button>
+              <button onClick={() => router.push('/agent/bet-history')}
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Bet History</h3>
+                <p className="text-xs sm:text-sm text-gray-500">All player bets</p>
+              </button>
+              <button onClick={() => router.push('/agent/client-ledger')}
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Client Ledger</h3>
+                <p className="text-xs sm:text-sm text-gray-500">P&L by client</p>
+              </button>
+              <button onClick={() => router.push('/agent/commissions')}
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Commissions</h3>
+                <p className="text-xs sm:text-sm text-gray-500">Commission lena dena</p>
+              </button>
+              <button onClick={() => router.push('/matches')}
+                className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">View Matches</h3>
+                <p className="text-xs sm:text-sm text-gray-500">Live and upcoming matches</p>
               </button>
               {(user?.role === 'MASTER' || user?.role === 'SUPER_MASTER') && (
-                <button
-                  onClick={() => router.push('/agent/player-settings')}
-                  className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition text-left border-l-4 border-l-amber-400"
-                >
-                  <h3 className="font-semibold text-gray-900 mb-1">Player Settings</h3>
-                  <p className="text-sm text-gray-500">Delay, stakes & bet permissions</p>
+                <button onClick={() => router.push('/agent/player-settings')}
+                  className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border hover:shadow-md transition text-left border-l-4 border-l-amber-400">
+                  <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Player Settings</h3>
+                  <p className="text-xs sm:text-sm text-gray-500">Delay, stakes & permissions</p>
                 </button>
               )}
             </div>

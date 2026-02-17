@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.routes';
 import matchRoutes from './routes/match.routes';
 import betRoutes from './routes/bet.routes';
 import agentRoutes from './routes/agent.routes';
+import userRoutes from './routes/user.routes';
 
 const app: Application = express();
 const httpServer = createServer(app);
@@ -49,6 +50,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/matches', matchRoutes);
 app.use('/api/v1/bets', betRoutes);
 app.use('/api/v1/agents', agentRoutes);
+app.use('/api/v1/users', userRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

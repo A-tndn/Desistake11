@@ -547,6 +547,99 @@ class AgentService {
     };
   }
 
+  async getAgentAccountStatement(agentId: string, filters: { from?: string; to?: string; type?: string }) {
+    const where: any = { agentId };
+    if (filters.from || filters.to) {
+      where.createdAt = {};
+      if (filters.from) where.createdAt.gte = new Date(filters.from);
+      if (filters.to) where.createdAt.lte = new Date(filters.to);
+    }
+    if (filters.type) where.type = filters.type;
+
+    return await prisma.transaction.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+  }
+
+  async getAgentBetHistory(agentId: string, filters: { status?: string; matchId?: string }) {
+    const players = await prisma.user.findMany({
+      where: { agentId },
+      select: { id: true },
+    });
+    const playerIds = players.map((p) => p.id);
+
+    const where: any = { userId: { in: playerIds } };
+    if (filters.status) where.status = filters.status;
+    if (filters.matchId) where.matchId = filters.matchId;
+
+    return await prisma.bet.findMany({
+      where,
+      include: {
+        user: { select: { id: true, username: true, displayName: true } },
+        match: { select: { team1: true, team2: true, status: true, startTime: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+  }
+
+  async getAgentClientLedger(agentId: string) {
+    const players = await prisma.user.findMany({
+      where: { agentId },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        balance: true,
+        bets: {
+          where: { status: { in: ['WON', 'LOST'] } },
+          select: { amount: true, actualWin: true, status: true },
+        },
+      },
+    });
+
+    return players.map((player) => {
+      const totalBetAmount = player.bets.reduce((sum, b) => sum + b.amount.toNumber(), 0);
+      const totalWon = player.bets.filter((b) => b.status === 'WON').reduce((sum, b) => sum + (b.actualWin?.toNumber() || 0), 0);
+      const totalLost = player.bets.filter((b) => b.status === 'LOST').reduce((sum, b) => sum + b.amount.toNumber(), 0);
+      const netPL = totalWon - totalLost;
+      return {
+        id: player.id,
+        username: player.username,
+        displayName: player.displayName,
+        balance: player.balance.toNumber(),
+        totalBets: player.bets.length,
+        totalBetAmount,
+        totalWon,
+        totalLost,
+        netPL,
+      };
+    });
+  }
+
+  async getAgentCommissionReport(agentId: string) {
+    return await prisma.commission.findMany({
+      where: { agentId },
+      include: {
+        bet: {
+          select: {
+            id: true,
+            betType: true,
+            betOn: true,
+            amount: true,
+            status: true,
+            match: { select: { team1: true, team2: true } },
+            user: { select: { username: true, displayName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+  }
+
   async getAgentHierarchy(agentId: string) {
     const agent = await prisma.agent.findUnique({
       where: { id: agentId },

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ToastContainer from "@/components/Toast";
+import BottomNav from "@/components/BottomNav";
+import InactivityTimeout from "@/components/InactivityTimeout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +21,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ToastContainer />
-        {children}
+        <InactivityTimeout />
+        <div className="pb-14 sm:pb-0">
+          {children}
+        </div>
+        <BottomNav />
       </body>
     </html>
   );

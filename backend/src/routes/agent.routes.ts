@@ -55,6 +55,12 @@ router.get('/players', agentController.getPlayers);
 router.get('/stats', agentController.getStats);
 router.get('/hierarchy', agentController.getHierarchy);
 
+// Agent Reports
+router.get('/reports/account-statement', agentController.getAccountStatement);
+router.get('/reports/bet-history', agentController.getBetHistory);
+router.get('/reports/client-ledger', agentController.getClientLedger);
+router.get('/reports/commissions', agentController.getCommissionReport);
+
 // Master Agent Only - Player Betting Settings
 router.get('/master/players', agentController.getMasterAllPlayers);
 router.get('/master/players/:playerId/settings', agentController.getPlayerBettingSettings);

@@ -60,6 +60,12 @@ export default function Navbar() {
                 <button onClick={() => navigate('/agent/credits')} className="text-sm text-gray-600 hover:text-blue-600 transition">
                   Credits
                 </button>
+                <button onClick={() => navigate('/agent/bet-history')} className="text-sm text-gray-600 hover:text-blue-600 transition">
+                  Bet History
+                </button>
+                <button onClick={() => navigate('/agent/commissions')} className="text-sm text-gray-600 hover:text-blue-600 transition">
+                  Commissions
+                </button>
                 {isMaster && (
                   <button onClick={() => navigate('/agent/player-settings')} className="text-sm text-amber-600 hover:text-amber-700 transition font-medium">
                     Settings
@@ -83,7 +89,19 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          {user?.balance !== undefined && (
+          {user?.balance !== undefined && !isAgent && (
+            <div className="flex items-center gap-1.5">
+              <div className="bg-green-50 text-green-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-sm font-medium">
+                <span className="hidden sm:inline">Coins: </span>{formatCurrency(user.balance)}
+              </div>
+              {user?.exposure !== undefined && user.exposure > 0 && (
+                <div className="bg-red-50 text-red-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-sm font-medium">
+                  <span className="hidden sm:inline">Used: </span>{formatCurrency(user.exposure)}
+                </div>
+              )}
+            </div>
+          )}
+          {user?.balance !== undefined && isAgent && (
             <div className="bg-green-50 text-green-700 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium">
               {formatCurrency(user.balance)}
             </div>
@@ -122,6 +140,18 @@ export default function Navbar() {
               <button onClick={() => navigate('/matches')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
                 Matches
               </button>
+              <button onClick={() => navigate('/agent/account-statement')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Account Statement
+              </button>
+              <button onClick={() => navigate('/agent/bet-history')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Bet History
+              </button>
+              <button onClick={() => navigate('/agent/client-ledger')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Client Ledger
+              </button>
+              <button onClick={() => navigate('/agent/commissions')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Commissions
+              </button>
               {isMaster && (
                 <button onClick={() => navigate('/agent/player-settings')} className="block w-full text-left px-3 py-2 text-sm text-amber-600 font-medium hover:bg-amber-50 rounded-lg">
                   Player Settings
@@ -133,11 +163,29 @@ export default function Navbar() {
               <button onClick={() => navigate('/dashboard')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
                 Dashboard
               </button>
+              <button onClick={() => navigate('/inplay')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                In-Play
+              </button>
               <button onClick={() => navigate('/matches')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
                 Matches
               </button>
               <button onClick={() => navigate('/bets')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
                 My Bets
+              </button>
+              <button onClick={() => navigate('/account-statement')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Account Statement
+              </button>
+              <button onClick={() => navigate('/ledger')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Ledger
+              </button>
+              <button onClick={() => navigate('/complete-games')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Completed Games
+              </button>
+              <button onClick={() => navigate('/profile')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Profile
+              </button>
+              <button onClick={() => navigate('/rules')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                Rules
               </button>
             </>
           )}

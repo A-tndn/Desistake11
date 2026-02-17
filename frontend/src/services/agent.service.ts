@@ -51,6 +51,22 @@ class AgentService {
   }) {
     return await api.put<any>(`/agents/master/players/${playerId}/settings`, settings);
   }
+  // Agent Reports
+  async getAccountStatement(params?: { from?: string; to?: string; type?: string }) {
+    return await api.get<any>('/agents/reports/account-statement', { params });
+  }
+
+  async getBetHistory(params?: { status?: string; matchId?: string }) {
+    return await api.get<any>('/agents/reports/bet-history', { params });
+  }
+
+  async getClientLedger() {
+    return await api.get<any>('/agents/reports/client-ledger');
+  }
+
+  async getCommissionReport() {
+    return await api.get<any>('/agents/reports/commissions');
+  }
 }
 
 export const agentService = new AgentService();

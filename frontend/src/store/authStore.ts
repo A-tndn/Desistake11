@@ -8,6 +8,7 @@ interface User {
   role: string;
   type: 'user' | 'agent';
   balance?: number;
+  exposure?: number;
 }
 
 interface AuthState {
@@ -17,6 +18,7 @@ interface AuthState {
   login: (token: string, user: User) => void;
   logout: () => void;
   updateBalance: (balance: number) => void;
+  updateExposure: (exposure: number) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -39,6 +41,11 @@ export const useAuthStore = create<AuthState>()(
       updateBalance: (balance) =>
         set((state) => ({
           user: state.user ? { ...state.user, balance } : null,
+        })),
+
+      updateExposure: (exposure) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, exposure } : null,
         })),
     }),
     {
