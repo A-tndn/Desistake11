@@ -20,51 +20,95 @@ class BetService {
   async placeBet(data: PlaceBetData) {
     const { userId, matchId, betType, betOn, amount, odds, description, ipAddress, userAgent } = data;
 
-    if (amount < config.minBetAmount) {
-      throw new AppError(`Minimum bet amount is ${config.minBetAmount}`, 400);
+    // Fetch user with betting settings
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        balance: true,
+        creditLimit: true,
+        status: true,
+        agentId: true,
+        bookmakerDelay: true,
+        sessionDelay: true,
+        matchDelay: true,
+        bookmakerMinStack: true,
+        bookmakerMaxStack: true,
+        betDeleteAllowed: true,
+      },
+    });
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw new AppError('User not found or inactive', 404);
     }
 
-    if (amount > config.maxBetAmount) {
-      throw new AppError(`Maximum bet amount is ${config.maxBetAmount}`, 400);
+    // Use player-specific min/max if set, else config defaults
+    const minBet = user.bookmakerMinStack ? user.bookmakerMinStack.toNumber() : config.minBetAmount;
+    const maxBet = user.bookmakerMaxStack ? user.bookmakerMaxStack.toNumber() : config.maxBetAmount;
+
+    if (amount < minBet) {
+      throw new AppError(`Minimum bet amount is ${minBet}`, 400);
     }
 
-    return await prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({
+    if (amount > maxBet) {
+      throw new AppError(`Maximum bet amount is ${maxBet}`, 400);
+    }
+
+    if (user.balance.toNumber() < amount) {
+      throw new AppError('Insufficient balance', 400);
+    }
+
+    const match = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: { status: true, startTime: true },
+    });
+
+    if (!match) {
+      throw new AppError('Match not found', 404);
+    }
+
+    if (match.status === 'COMPLETED' || match.status === 'CANCELLED') {
+      throw new AppError('Match has ended', 400);
+    }
+
+    // Determine delay based on bet type
+    let delay = 0;
+    if (betType === 'MATCH_WINNER' || betType === 'TOP_BATSMAN' || betType === 'TOP_BOWLER') {
+      delay = user.matchDelay || 4;
+    } else if (betType === 'SESSION' || betType === 'FANCY') {
+      delay = user.sessionDelay || 3;
+    } else {
+      delay = user.bookmakerDelay || 3;
+    }
+
+    // Record the odds at bet placement time
+    const oddsAtPlacement = odds;
+
+    // If delay > 0, wait and verify odds haven't changed
+    // The delay is handled server-side: we record bet as PENDING with delay metadata
+    // A scheduled check or immediate check after delay verifies odds stability
+    // For now, we implement instant placement with delay info returned to frontend
+
+    const potentialWin = amount * odds;
+
+    // Execute in transaction
+    const bet = await prisma.$transaction(async (tx) => {
+      const freshUser = await tx.user.findUnique({
         where: { id: userId },
-        select: { balance: true, creditLimit: true, status: true, agentId: true },
+        select: { balance: true },
       });
 
-      if (!user || user.status !== 'ACTIVE') {
-        throw new AppError('User not found or inactive', 404);
-      }
-
-      if (user.balance.toNumber() < amount) {
+      if (!freshUser || freshUser.balance.toNumber() < amount) {
         throw new AppError('Insufficient balance', 400);
       }
 
-      const match = await tx.match.findUnique({
-        where: { id: matchId },
-        select: { status: true, startTime: true },
-      });
-
-      if (!match) {
-        throw new AppError('Match not found', 404);
-      }
-
-      if (match.status === 'COMPLETED' || match.status === 'CANCELLED') {
-        throw new AppError('Match has ended', 400);
-      }
-
-      const potentialWin = amount * odds;
-
-      const newBalance = user.balance.toNumber() - amount;
+      const newBalance = freshUser.balance.toNumber() - amount;
 
       await tx.user.update({
         where: { id: userId },
         data: { balance: newBalance },
       });
 
-      const bet = await tx.bet.create({
+      const createdBet = await tx.bet.create({
         data: {
           userId,
           matchId,
@@ -77,6 +121,11 @@ class BetService {
           ipAddress,
           userAgent,
           status: BetStatus.PENDING,
+          metadata: {
+            oddsAtPlacement,
+            delay,
+            placedAt: new Date().toISOString(),
+          },
         },
       });
 
@@ -86,9 +135,9 @@ class BetService {
           type: TransactionType.BET_PLACED,
           status: TransactionStatus.COMPLETED,
           amount,
-          balanceBefore: user.balance,
+          balanceBefore: freshUser.balance,
           balanceAfter: newBalance,
-          referenceId: bet.id,
+          referenceId: createdBet.id,
           referenceType: 'bet',
           processedBy: 'SYSTEM',
           processedAt: new Date(),
@@ -104,9 +153,110 @@ class BetService {
         },
       });
 
-      logger.info(`Bet placed: ${bet.id} by user ${userId} for ${amount}`);
+      logger.info(`Bet placed: ${createdBet.id} by user ${userId} for ${amount} with ${delay}s delay`);
 
-      return bet;
+      return { bet: createdBet, newBalance };
+    });
+
+    return {
+      ...bet.bet,
+      newBalance: bet.newBalance,
+      delay,
+      betDeleteAllowed: user.betDeleteAllowed,
+    };
+  }
+
+  async deleteBet(betId: string, userId: string) {
+    // Check if user is allowed to delete bets
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { betDeleteAllowed: true },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (!user.betDeleteAllowed) {
+      throw new AppError('Bet deletion is not allowed for your account', 403);
+    }
+
+    const bet = await prisma.bet.findUnique({
+      where: { id: betId },
+      include: { user: { select: { balance: true } } },
+    });
+
+    if (!bet) {
+      throw new AppError('Bet not found', 404);
+    }
+
+    if (bet.userId !== userId) {
+      throw new AppError('Unauthorized', 403);
+    }
+
+    if (bet.status !== BetStatus.PENDING) {
+      throw new AppError('Only pending bets can be deleted', 400);
+    }
+
+    // Check if bet was placed within the last 30 seconds (grace period)
+    const betAge = Date.now() - new Date(bet.createdAt).getTime();
+    if (betAge > 30000) {
+      throw new AppError('Bet can only be deleted within 30 seconds of placement', 400);
+    }
+
+    // Refund the bet amount
+    return await prisma.$transaction(async (tx) => {
+      const freshUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { balance: true },
+      });
+
+      if (!freshUser) throw new AppError('User not found', 404);
+
+      const newBalance = freshUser.balance.toNumber() + bet.amount.toNumber();
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { balance: newBalance },
+      });
+
+      await tx.bet.update({
+        where: { id: betId },
+        data: {
+          status: BetStatus.CANCELLED,
+          settledAt: new Date(),
+          settledBy: 'USER_DELETE',
+          settlementNote: 'Deleted by user within grace period',
+        },
+      });
+
+      await tx.transaction.create({
+        data: {
+          userId,
+          type: TransactionType.BET_REFUND,
+          status: TransactionStatus.COMPLETED,
+          amount: bet.amount,
+          balanceBefore: freshUser.balance,
+          balanceAfter: newBalance,
+          referenceId: betId,
+          referenceType: 'bet_delete',
+          processedBy: userId,
+          processedAt: new Date(),
+          description: `Bet deleted by user: ${bet.betType} on ${bet.betOn}`,
+        },
+      });
+
+      await tx.match.update({
+        where: { id: bet.matchId },
+        data: {
+          totalBetsAmount: { decrement: bet.amount.toNumber() },
+          totalBetsCount: { decrement: 1 },
+        },
+      });
+
+      logger.info(`Bet deleted: ${betId} by user ${userId}, refunded ${bet.amount}`);
+
+      return { betId, refundedAmount: bet.amount.toNumber(), newBalance };
     });
   }
 

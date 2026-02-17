@@ -8,7 +8,7 @@ export const placeBet = asyncHandler(async (req: AuthRequest, res: Response) => 
   const userId = req.user!.id;
   const { matchId, betType, betOn, amount, odds, description } = req.body;
 
-  const bet = await betService.placeBet({
+  const result = await betService.placeBet({
     userId,
     matchId,
     betType,
@@ -20,7 +20,18 @@ export const placeBet = asyncHandler(async (req: AuthRequest, res: Response) => 
     userAgent: req.get('user-agent'),
   });
 
-  successResponse(res, 'Bet placed successfully', bet, 201);
+  successResponse(res, 'Bet placed successfully', {
+    id: result.id,
+    betType: result.betType,
+    betOn: result.betOn,
+    amount: result.amount,
+    odds: result.odds,
+    potentialWin: result.potentialWin,
+    status: result.status,
+    delay: result.delay,
+    newBalance: result.newBalance,
+    betDeleteAllowed: result.betDeleteAllowed,
+  }, 201);
 });
 
 export const getUserBets = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -44,4 +55,13 @@ export const getBetById = asyncHandler(async (req: AuthRequest, res: Response) =
   }
 
   successResponse(res, 'Bet retrieved successfully', bet);
+});
+
+export const deleteBet = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
+  const { id } = req.params;
+
+  const result = await betService.deleteBet(id, userId);
+
+  successResponse(res, 'Bet deleted successfully', result);
 });

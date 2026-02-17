@@ -138,6 +138,189 @@ class AgentService {
     return player;
   }
 
+  /**
+   * Update player betting settings - MASTER AGENT ONLY
+   * Regular agents cannot see or modify these settings
+   */
+  async updatePlayerBettingSettings(
+    agentId: string,
+    playerId: string,
+    settings: {
+      bookmakerDelay?: number;
+      sessionDelay?: number;
+      matchDelay?: number;
+      bookmakerMinStack?: number;
+      bookmakerMaxStack?: number;
+      betDeleteAllowed?: boolean;
+    }
+  ) {
+    const agent = await prisma.agent.findUnique({
+      where: { id: agentId },
+      select: { agentType: true, status: true },
+    });
+
+    if (!agent || agent.status !== UserStatus.ACTIVE) {
+      throw new AppError('Agent not found or inactive', 404);
+    }
+
+    if (agent.agentType !== AgentType.MASTER && agent.agentType !== AgentType.SUPER_MASTER) {
+      throw new AppError('Only Master Agents can modify player betting settings', 403);
+    }
+
+    const player = await prisma.user.findUnique({
+      where: { id: playerId },
+      select: {
+        id: true,
+        agentId: true,
+        agent: {
+          select: { parentAgentId: true },
+        },
+      },
+    });
+
+    if (!player) {
+      throw new AppError('Player not found', 404);
+    }
+
+    const isDirectPlayer = player.agentId === agentId;
+    const isSubAgentPlayer = player.agent?.parentAgentId === agentId;
+
+    if (!isDirectPlayer && !isSubAgentPlayer) {
+      throw new AppError('Player does not belong to your hierarchy', 403);
+    }
+
+    const updateData: any = {};
+    if (settings.bookmakerDelay !== undefined) updateData.bookmakerDelay = settings.bookmakerDelay;
+    if (settings.sessionDelay !== undefined) updateData.sessionDelay = settings.sessionDelay;
+    if (settings.matchDelay !== undefined) updateData.matchDelay = settings.matchDelay;
+    if (settings.bookmakerMinStack !== undefined) updateData.bookmakerMinStack = settings.bookmakerMinStack;
+    if (settings.bookmakerMaxStack !== undefined) updateData.bookmakerMaxStack = settings.bookmakerMaxStack;
+    if (settings.betDeleteAllowed !== undefined) updateData.betDeleteAllowed = settings.betDeleteAllowed;
+
+    const updatedPlayer = await prisma.user.update({
+      where: { id: playerId },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        bookmakerDelay: true,
+        sessionDelay: true,
+        matchDelay: true,
+        bookmakerMinStack: true,
+        bookmakerMaxStack: true,
+        betDeleteAllowed: true,
+      },
+    });
+
+    logger.info(`Player betting settings updated: ${playerId} by master agent ${agentId}`);
+
+    return updatedPlayer;
+  }
+
+  async getPlayerBettingSettings(agentId: string, playerId: string) {
+    const agent = await prisma.agent.findUnique({
+      where: { id: agentId },
+      select: { agentType: true, status: true },
+    });
+
+    if (!agent || agent.status !== UserStatus.ACTIVE) {
+      throw new AppError('Agent not found or inactive', 404);
+    }
+
+    if (agent.agentType !== AgentType.MASTER && agent.agentType !== AgentType.SUPER_MASTER) {
+      throw new AppError('Only Master Agents can view player betting settings', 403);
+    }
+
+    const player = await prisma.user.findUnique({
+      where: { id: playerId },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        bookmakerDelay: true,
+        sessionDelay: true,
+        matchDelay: true,
+        bookmakerMinStack: true,
+        bookmakerMaxStack: true,
+        betDeleteAllowed: true,
+        agent: { select: { parentAgentId: true } },
+        agentId: true,
+      },
+    });
+
+    if (!player) {
+      throw new AppError('Player not found', 404);
+    }
+
+    const isDirectPlayer = player.agentId === agentId;
+    const isSubAgentPlayer = player.agent?.parentAgentId === agentId;
+
+    if (!isDirectPlayer && !isSubAgentPlayer) {
+      throw new AppError('Player does not belong to your hierarchy', 403);
+    }
+
+    return {
+      id: player.id,
+      username: player.username,
+      displayName: player.displayName,
+      bookmakerDelay: player.bookmakerDelay,
+      sessionDelay: player.sessionDelay,
+      matchDelay: player.matchDelay,
+      bookmakerMinStack: player.bookmakerMinStack,
+      bookmakerMaxStack: player.bookmakerMaxStack,
+      betDeleteAllowed: player.betDeleteAllowed,
+    };
+  }
+
+  async getMasterAgentAllPlayers(agentId: string) {
+    const agent = await prisma.agent.findUnique({
+      where: { id: agentId },
+      select: { agentType: true, status: true },
+    });
+
+    if (!agent || agent.status !== UserStatus.ACTIVE) {
+      throw new AppError('Agent not found or inactive', 404);
+    }
+
+    if (agent.agentType !== AgentType.MASTER && agent.agentType !== AgentType.SUPER_MASTER) {
+      throw new AppError('Only Master Agents can view all hierarchy players', 403);
+    }
+
+    const subAgents = await prisma.agent.findMany({
+      where: { parentAgentId: agentId },
+      select: { id: true },
+    });
+    const subAgentIds = subAgents.map((a) => a.id);
+
+    return await prisma.user.findMany({
+      where: {
+        agentId: { in: [agentId, ...subAgentIds] },
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        balance: true,
+        creditLimit: true,
+        status: true,
+        bookmakerDelay: true,
+        sessionDelay: true,
+        matchDelay: true,
+        bookmakerMinStack: true,
+        bookmakerMaxStack: true,
+        betDeleteAllowed: true,
+        agentId: true,
+        agent: {
+          select: { username: true, displayName: true },
+        },
+        lastLoginAt: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async transferCredit(agentId: string, playerId: string, amount: number) {
     if (amount <= 0) {
       throw new AppError('Invalid transfer amount', 400);

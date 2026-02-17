@@ -119,6 +119,14 @@ model User {
   bets              Bet[]
   transactions      Transaction[]
 
+  // Betting Settings (managed by master agent only)
+  bookmakerDelay    Int             @default(3)
+  sessionDelay      Int             @default(3)
+  matchDelay        Int             @default(4)
+  bookmakerMinStack Decimal         @default(100)   @db.Decimal(12, 2)
+  bookmakerMaxStack Decimal         @default(200000) @db.Decimal(12, 2)
+  betDeleteAllowed  Boolean         @default(false)
+
   // Tracking
   lastLoginAt       DateTime?
   lastLoginIp       String?

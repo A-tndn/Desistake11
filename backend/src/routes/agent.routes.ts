@@ -38,6 +38,15 @@ const transferCreditSchema = Joi.object({
   amount: Joi.number().min(1).required(),
 });
 
+const updateBettingSettingsSchema = Joi.object({
+  bookmakerDelay: Joi.number().integer().min(0).max(30).optional(),
+  sessionDelay: Joi.number().integer().min(0).max(30).optional(),
+  matchDelay: Joi.number().integer().min(0).max(30).optional(),
+  bookmakerMinStack: Joi.number().min(0).optional(),
+  bookmakerMaxStack: Joi.number().min(0).optional(),
+  betDeleteAllowed: Joi.boolean().optional(),
+});
+
 router.post('/create-agent', validate(createAgentSchema), agentController.createAgent);
 router.post('/create-player', validate(createPlayerSchema), agentController.createPlayer);
 router.post('/transfer-credit', validate(transferCreditSchema), agentController.transferCredit);
@@ -45,5 +54,10 @@ router.post('/deduct-credit', validate(transferCreditSchema), agentController.de
 router.get('/players', agentController.getPlayers);
 router.get('/stats', agentController.getStats);
 router.get('/hierarchy', agentController.getHierarchy);
+
+// Master Agent Only - Player Betting Settings
+router.get('/master/players', agentController.getMasterAllPlayers);
+router.get('/master/players/:playerId/settings', agentController.getPlayerBettingSettings);
+router.put('/master/players/:playerId/settings', validate(updateBettingSettingsSchema), agentController.updatePlayerBettingSettings);
 
 export default router;

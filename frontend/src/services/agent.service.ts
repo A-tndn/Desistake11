@@ -31,6 +31,26 @@ class AgentService {
   async deductCredit(playerId: string, amount: number) {
     return await api.post<any>('/agents/deduct-credit', { playerId, amount });
   }
+
+  // Master Agent Only
+  async getMasterAllPlayers() {
+    return await api.get<any>('/agents/master/players');
+  }
+
+  async getPlayerBettingSettings(playerId: string) {
+    return await api.get<any>(`/agents/master/players/${playerId}/settings`);
+  }
+
+  async updatePlayerBettingSettings(playerId: string, settings: {
+    bookmakerDelay?: number;
+    sessionDelay?: number;
+    matchDelay?: number;
+    bookmakerMinStack?: number;
+    bookmakerMaxStack?: number;
+    betDeleteAllowed?: boolean;
+  }) {
+    return await api.put<any>(`/agents/master/players/${playerId}/settings`, settings);
+  }
 }
 
 export const agentService = new AgentService();

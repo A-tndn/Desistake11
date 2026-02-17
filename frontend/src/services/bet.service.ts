@@ -21,6 +21,10 @@ class BetService {
   async getBetById(id: string) {
     return await api.get<any>(`/bets/${id}`);
   }
+
+  async deleteBet(id: string) {
+    return await api.delete<any>(`/bets/${id}`);
+  }
 }
 
 export const betService = new BetService();

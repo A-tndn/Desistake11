@@ -48,3 +48,24 @@ export const getHierarchy = asyncHandler(async (req: AuthRequest, res: Response)
   const hierarchy = await agentService.getAgentHierarchy(agentId);
   successResponse(res, 'Hierarchy retrieved successfully', hierarchy);
 });
+
+// Master Agent Only - Player Betting Settings
+export const getPlayerBettingSettings = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const agentId = req.user!.id;
+  const { playerId } = req.params;
+  const settings = await agentService.getPlayerBettingSettings(agentId, playerId);
+  successResponse(res, 'Player betting settings retrieved', settings);
+});
+
+export const updatePlayerBettingSettings = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const agentId = req.user!.id;
+  const { playerId } = req.params;
+  const result = await agentService.updatePlayerBettingSettings(agentId, playerId, req.body);
+  successResponse(res, 'Player betting settings updated', result);
+});
+
+export const getMasterAllPlayers = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const agentId = req.user!.id;
+  const players = await agentService.getMasterAgentAllPlayers(agentId);
+  successResponse(res, 'All hierarchy players retrieved', players);
+});

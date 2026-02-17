@@ -77,7 +77,7 @@ export default function AgentDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className={`grid grid-cols-1 md:grid-cols-3 ${(user?.role === 'MASTER' || user?.role === 'SUPER_MASTER') ? 'lg:grid-cols-4' : ''} gap-4 mb-8`}>
               <button
                 onClick={() => router.push('/agent/players')}
                 className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition text-left"
@@ -99,6 +99,15 @@ export default function AgentDashboard() {
                 <h3 className="font-semibold text-gray-900 mb-1">View Matches</h3>
                 <p className="text-sm text-gray-500">See upcoming and live matches</p>
               </button>
+              {(user?.role === 'MASTER' || user?.role === 'SUPER_MASTER') && (
+                <button
+                  onClick={() => router.push('/agent/player-settings')}
+                  className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition text-left border-l-4 border-l-amber-400"
+                >
+                  <h3 className="font-semibold text-gray-900 mb-1">Player Settings</h3>
+                  <p className="text-sm text-gray-500">Delay, stakes & bet permissions</p>
+                </button>
+              )}
             </div>
 
             {/* Players Table */}

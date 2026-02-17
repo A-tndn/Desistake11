@@ -25,7 +25,7 @@ const placeBetSchema = Joi.object({
     )
     .required(),
   betOn: Joi.string().required(),
-  amount: Joi.number().min(10).max(100000).required(),
+  amount: Joi.number().min(1).required(),
   odds: Joi.number().min(1).required(),
   description: Joi.string().optional(),
 });
@@ -33,5 +33,6 @@ const placeBetSchema = Joi.object({
 router.post('/', validate(placeBetSchema), betController.placeBet);
 router.get('/', betController.getUserBets);
 router.get('/:id', betController.getBetById);
+router.delete('/:id', betController.deleteBet);
 
 export default router;
