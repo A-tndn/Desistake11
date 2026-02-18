@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Users, Trophy, Activity, ArrowDownCircle,
   ArrowUpCircle, FileText, BookOpen, LogOut, ChevronRight,
-  X, Wallet, Gamepad2, MessageCircle,
+  X, Wallet, Gamepad2, History, TrendingUp, ImagePlus,
+  Dices, BarChart3, CreditCard, Scale, ClipboardList,
+  Target, KeyRound, Receipt, Handshake,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -26,31 +28,49 @@ const menuSections = [
     title: 'Management',
     items: [
       { href: '/agent/clients', label: 'Client Master', icon: Users },
-      { href: '/agent/players', label: 'Players', icon: Users },
       { href: '/agent/matches/current', label: 'Current Matches', icon: Activity },
       { href: '/agent/matches/completed', label: 'Completed Matches', icon: Trophy },
       { href: '/agent/casino', label: 'Casino Games', icon: Gamepad2 },
+      { href: '/agent/banners', label: 'Banner Mgmt', icon: ImagePlus },
+    ],
+  },
+  {
+    title: 'Casino Betting',
+    items: [
+      { href: '/agent/casino/details', label: 'Casino Details', icon: Dices },
+      { href: '/agent/casino/bet-report', label: 'Casino Bet Report', icon: BarChart3 },
+      { href: '/agent/casino/position', label: 'Live Casino Position', icon: Target },
+      { href: '/agent/casino/blackjack-settings', label: 'Blackjack Control', icon: Gamepad2 },
     ],
   },
   {
     title: 'Transactions',
     items: [
       { href: '/agent/credits', label: 'Credit Mgmt', icon: Wallet },
+      { href: '/agent/cash-transaction', label: 'Cash Transaction', icon: CreditCard },
       { href: '/agent/transactions/deposits', label: 'Deposits', icon: ArrowDownCircle },
       { href: '/agent/transactions/withdrawals', label: 'Withdrawals', icon: ArrowUpCircle },
     ],
   },
   {
-    title: 'Support',
+    title: 'Reports',
     items: [
-      { href: '/agent/support', label: 'Support Tickets', icon: MessageCircle },
+      { href: '/agent/reports', label: 'Overview', icon: FileText },
+      { href: '/agent/account-statement', label: 'Account Statement', icon: FileText },
+      { href: '/agent/reports/details', label: 'Report Details', icon: ClipboardList },
+      { href: '/agent/bet-history', label: 'Bet History', icon: History },
+      { href: '/agent/reports/current-bets', label: 'Current Bets', icon: Target },
+      { href: '/agent/client-ledger', label: 'Client Ledger', icon: BookOpen },
+      { href: '/agent/commissions', label: 'Commissions', icon: TrendingUp },
+      { href: '/agent/lena-dena', label: 'Lena Dena', icon: Handshake },
+      { href: '/agent/my-ledger', label: 'My Ledger', icon: Receipt },
+      { href: '/agent/reports/sports', label: 'Sports Reports', icon: BarChart3 },
     ],
   },
   {
-    title: 'Reports',
+    title: 'Settings',
     items: [
-      { href: '/agent/reports', label: 'Reports', icon: FileText },
-      { href: '/agent/ledger', label: 'Ledger', icon: BookOpen },
+      { href: '/agent/change-password', label: 'Change Password', icon: KeyRound },
     ],
   },
 ];
@@ -60,7 +80,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
-  // All admin paths are prefixed by the route group — but pathname won't include (admin)
   const handleNav = (href: string) => {
     router.push(href);
     onClose();
@@ -83,7 +102,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         className={cn(
           'fixed top-0 left-0 h-full bg-gray-900 text-white z-50 transition-transform duration-300 flex flex-col',
           'w-64',
-          // Mobile: slide in/out
           'lg:translate-x-0 lg:static lg:z-auto',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -92,7 +110,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         <div className="p-4 border-b border-gray-800">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold">
-              <span className="text-brand-orange">Cric</span>Bet
+              <span className="text-brand-orange">Stake</span>111
               <span className="text-xs text-muted-foreground ml-1.5">Admin</span>
             </h1>
             <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded lg:hidden">

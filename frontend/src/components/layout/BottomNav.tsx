@@ -3,15 +3,15 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  FileText, Activity, Home, CheckCircle, BookOpen,
+  FileText, Activity, Home, CheckCircle, ScrollText,
 } from 'lucide-react';
 
 const navItems = [
-  { href: '/account', label: 'Acc. Stmt', icon: FileText },
+  { href: '/account', label: 'Statement', icon: FileText },
   { href: '/inplay', label: 'Inplay', icon: Activity },
   { href: '/dashboard', label: 'Home', icon: Home },
-  { href: '/bets?status=completed', label: 'Completed', icon: CheckCircle },
-  { href: '/ledger', label: 'Ledger', icon: BookOpen },
+  { href: '/completed-games', label: 'Completed', icon: CheckCircle },
+  { href: '/bets', label: 'My Bets', icon: ScrollText },
 ];
 
 export default function BottomNav() {

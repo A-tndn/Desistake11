@@ -35,7 +35,6 @@ const menuSections = [
     items: [
       { href: '/bets', label: 'My Bets', icon: ScrollText },
       { href: '/account', label: 'Account Statement', icon: FileText },
-      { href: '/ledger', label: 'P&L Ledger', icon: BookOpen },
     ],
   },
   {
