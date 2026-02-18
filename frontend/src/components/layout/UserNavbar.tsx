@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { formatCurrency } from '@/lib/utils';
+import { api } from '@/lib/api';
 import {
   Menu, User, LogOut, ChevronDown,
   Wallet, Gift,
@@ -17,8 +18,34 @@ interface UserNavbarProps {
 
 export default function UserNavbar({ onMenuToggle }: UserNavbarProps) {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateBalance } = useAuthStore();
   const [showProfile, setShowProfile] = useState(false);
+  const [exposure, setExposure] = useState(0);
+
+  // Poll balance + exposure from /auth/me every 15s (fallback for WebSocket)
+  useEffect(() => {
+    if (!user) return;
+    const fetchBalanceAndExposure = async () => {
+      try {
+        const meRes: any = await api.get('/auth/me');
+        const data = meRes?.data;
+        if (data) {
+          if (data.balance !== undefined) {
+            const newBal = Number(data.balance);
+            if (newBal !== user.balance) updateBalance(newBal);
+          }
+          if (data.exposure !== undefined) {
+            setExposure(Number(data.exposure) || 0);
+          }
+        }
+      } catch {
+        // Silently fail
+      }
+    };
+    fetchBalanceAndExposure();
+    const interval = setInterval(fetchBalanceAndExposure, 15000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();
@@ -37,13 +64,13 @@ export default function UserNavbar({ onMenuToggle }: UserNavbarProps) {
             className="text-lg font-bold tracking-tight cursor-pointer"
             onClick={() => router.push('/dashboard')}
           >
-            <span className="text-brand-orange">Cric</span>Bet
+            <span className="text-brand-orange">Stake</span>111
           </h1>
         </div>
 
-        {/* Right: Balance + Theme + Notifications + Profile */}
+        {/* Right: Balance + Exposure + Theme + Notifications + Profile */}
         <div className="flex items-center gap-1.5">
-          {/* Balance */}
+          {/* Balance + Exposure */}
           {user?.balance !== undefined && (
             <div className="flex items-center gap-1.5 bg-card/10 backdrop-blur-sm px-2.5 py-1 rounded-lg">
               <Wallet className="w-3.5 h-3.5 text-brand-orange" />
@@ -51,6 +78,13 @@ export default function UserNavbar({ onMenuToggle }: UserNavbarProps) {
                 <span className="text-white/70">Coins</span>
                 <p className="font-semibold text-sm leading-tight">
                   {formatCurrency(user.balance)}
+                </p>
+              </div>
+              <div className="w-px h-6 bg-white/20 mx-0.5" />
+              <div className="text-xs">
+                <span className="text-red-300/80">Used</span>
+                <p className="font-semibold text-sm leading-tight text-red-300">
+                  {exposure > 0 ? formatCurrency(exposure) : '0'}
                 </p>
               </div>
             </div>

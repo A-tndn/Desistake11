@@ -29,10 +29,13 @@ const placeBetSchema = Joi.object({
   amount: Joi.number().min(10).max(100000).required(),
   odds: Joi.number().min(1).required(),
   description: Joi.string().optional(),
+  isBack: Joi.boolean().optional().default(true),
+  fancyMarketId: Joi.string().uuid().optional().allow(null),
 });
 
 router.post('/', bettingLimiter, validate(placeBetSchema), betController.placeBet);
 router.get('/', betController.getUserBets);
+router.get('/account-statement', betController.getAccountStatement);
 router.get('/:id', betController.getBetById);
 
 export default router;
