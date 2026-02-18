@@ -80,7 +80,7 @@ export default function AgentPlayersPage() {
           <form onSubmit={handleCreatePlayer} className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
               { label: 'Username', key: 'username', type: 'text', required: true, placeholder: 'e.g., john123' },
-              { label: 'Password', key: 'password', type: 'password', required: true, placeholder: 'Min 6 chars' },
+              { label: 'Password (share with player)', key: 'password', type: 'text', required: true, placeholder: 'Min 6 chars' },
               { label: 'Display Name', key: 'displayName', type: 'text', required: true, placeholder: 'Full Name' },
               { label: 'Credit Limit', key: 'creditLimit', type: 'number', required: true },
               { label: 'Email (optional)', key: 'email', type: 'email' },

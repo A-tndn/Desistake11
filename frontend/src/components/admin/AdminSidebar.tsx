@@ -9,7 +9,7 @@ import {
   ArrowUpCircle, FileText, BookOpen, LogOut, ChevronRight,
   X, Wallet, Gamepad2, History, TrendingUp, ImagePlus,
   Dices, BarChart3, CreditCard, Scale, ClipboardList,
-  Target, KeyRound, Receipt, Handshake,
+  Target, KeyRound, Receipt, Handshake, User,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -35,12 +35,9 @@ const menuSections = [
     ],
   },
   {
-    title: 'Casino Betting',
+    title: 'Casino',
     items: [
-      { href: '/agent/casino/details', label: 'Casino Details', icon: Dices },
-      { href: '/agent/casino/bet-report', label: 'Casino Bet Report', icon: BarChart3 },
-      { href: '/agent/casino/position', label: 'Live Casino Position', icon: Target },
-      { href: '/agent/casino/blackjack-settings', label: 'Blackjack Control', icon: Gamepad2 },
+      { href: '/agent/casino/details', label: 'Casino Details & Bets', icon: Dices },
     ],
   },
   {
@@ -70,6 +67,7 @@ const menuSections = [
   {
     title: 'Settings',
     items: [
+      { href: '/agent/profile', label: 'My Profile', icon: User },
       { href: '/agent/change-password', label: 'Change Password', icon: KeyRound },
     ],
   },

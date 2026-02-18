@@ -272,7 +272,7 @@ export default function GamePlayPage() {
           {gameType === 'COIN_FLIP' && <CoinFlipGame result={result} selectedBet={selectedBet} onSelectBet={setSelectedBet} isPlaying={playing} />}
           {gameType === 'DICE_ROLL' && <DiceGame result={result} selectedBet={selectedBet} onSelectBet={setSelectedBet} isPlaying={playing} />}
           {gameType === 'HI_LO' && <HiLoGame result={result} selectedBet={selectedBet} onSelectBet={setSelectedBet} isPlaying={playing} />}
-          {(gameType === 'TEEN_PATTI' || gameType === 'INDIAN_POKER') && <CardGame result={result} selectedBet={selectedBet} onSelectBet={setSelectedBet} isPlaying={playing} />}
+          {(gameType === 'TEEN_PATTI' || gameType === 'INDIAN_POKER') && <CardGame result={result} selectedBet={selectedBet} onSelectBet={setSelectedBet} isPlaying={playing} gameType={gameType as 'TEEN_PATTI' | 'INDIAN_POKER'} />}
           {gameType === 'ANDAR_BAHAR' && <AndarBaharGame result={result} selectedBet={selectedBet} onSelectBet={setSelectedBet} isPlaying={playing} />}
         </div>
       </motion.div>

@@ -53,6 +53,7 @@ export interface AgentProfile {
 
 export interface CreatePlayerData {
   username: string;
+  password: string;
   displayName: string;
   email?: string;
   phone?: string;
@@ -356,10 +357,11 @@ class AgentService {
 
   // ── Reports ──────────────────────────────────────────────────────────────
 
-  async getAccountStatement(filters?: { from?: string; to?: string }) {
+  async getAccountStatement(filters?: { from?: string; to?: string; userId?: string }) {
     const params = new URLSearchParams();
     if (filters?.from) params.append('from', filters.from);
     if (filters?.to) params.append('to', filters.to);
+    if (filters?.userId) params.append('userId', filters.userId);
     const query = params.toString();
     return await api.get<ApiResponse<any>>(`/agents/account-statement${query ? `?${query}` : ''}`);
   }

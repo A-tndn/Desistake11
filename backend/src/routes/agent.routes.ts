@@ -41,12 +41,43 @@ const transferCreditSchema = Joi.object({
   amount: Joi.number().min(1).required(),
 });
 
+// Agent profile & auth
+router.get('/profile', agentController.getProfile);
+router.put('/change-password', agentController.changePassword);
+
+// Player management
 router.post('/create-agent', validate(createAgentSchema), agentController.createAgent);
 router.post('/create-player', validate(createPlayerSchema), agentController.createPlayer);
+router.get('/players', agentController.getPlayers);
+router.put('/players/:playerId/change-password', agentController.changePlayerPassword);
+
+// Credits
 router.post('/transfer-credit', validate(transferCreditSchema), agentController.transferCredit);
 router.post('/deduct-credit', validate(transferCreditSchema), agentController.deductCredit);
-router.get('/players', agentController.getPlayers);
+
+// Reports & data
 router.get('/stats', agentController.getStats);
 router.get('/hierarchy', agentController.getHierarchy);
+router.get('/account-statement', agentController.getAccountStatement);
+router.get('/reports/current-bets', agentController.getCurrentBets);
+router.get('/reports/match-bets/:matchId', agentController.getMatchBetsForAgent);
+router.get('/reports/bet-history', agentController.getBetHistory);
+router.get('/reports/my-ledger', agentController.getMyLedger);
+router.get('/reports/details', agentController.getReportDetails);
+
+// Commission & ledger
+router.get('/commission-report', agentController.getCommissionReport);
+router.get('/client-ledger', agentController.getClientLedger);
+router.get('/reports/commission-lena-dena', agentController.getCommissionLenaDena);
+
+// Casino
+router.get('/casino/details', agentController.getCasinoDetails);
+
+// Banners
+router.get('/banners', agentController.getBanners);
+
+// Cash transactions
+router.post('/cash-transaction', agentController.createCashTransaction);
+router.get('/cash-transactions', agentController.getCashTransactions);
 
 export default router;
