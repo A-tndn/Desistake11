@@ -8,6 +8,11 @@ class MatchService {
   async getMatchById(id: string) {
     return await api.get<any>(`/matches/${id}`);
   }
+
+  // Get dashboard banners
+  async getBanners() {
+    return await api.get<any>('/matches/banners');
+  }
 }
 
 export const matchService = new MatchService();

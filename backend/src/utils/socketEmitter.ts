@@ -197,8 +197,16 @@ export function emitSettlementGenerated(data: {
  * Broadcast match score update
  */
 export function emitScoreUpdate(matchId: string, scores: {
-  team1Score?: string;
-  team2Score?: string;
+  matchId?: string;
+  team1Score?: string | null;
+  team2Score?: string | null;
+  statusText?: string | null;
+  recentBalls?: string[];
+  runRate?: string | null;
+  requiredRunRate?: string | null;
+  battingTeam?: string | null;
+  team1Short?: string | null;
+  team2Short?: string | null;
 }) {
   emitToMatch(matchId, 'score:updated', {
     matchId,
@@ -241,4 +249,57 @@ export function emitCasinoRoundEvent(gameId: string, event: string, data: any) {
     });
     logger.debug(`Socket emit to casino:${gameId} - ${event}`);
   }
+}
+
+// ============================================
+// MARKET ALERT & BET VOID EMITTERS
+// ============================================
+
+/**
+ * Broadcast market removal alert to match rooms and all connected clients
+ */
+export function emitMarketRemovalAlert(matchId: string, removedMarkets: Array<{ id: string; marketName: string }>) {
+  emitToMatch(matchId, 'market:removed', {
+    matchId,
+    removedMarkets,
+    timestamp: new Date().toISOString(),
+  });
+
+  broadcastAll('market:alert', {
+    type: 'MARKET_REMOVED',
+    matchId,
+    removedMarkets,
+    count: removedMarkets.length,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast bookmaker odds update for a match
+ */
+export function emitBookmakerUpdate(matchId: string, data: {
+  bookmakerOdds: any;
+  bookmakerSuspended: boolean;
+}) {
+  emitToMatch(matchId, 'bookmaker:updated', {
+    matchId,
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Emit bet voided notification to a user
+ */
+export function emitBetVoided(userId: string, data: {
+  betId: string;
+  matchName: string;
+  marketName?: string;
+  reason: string;
+  refundAmount: string;
+}) {
+  emitToUser(userId, 'bet:voided', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
 }

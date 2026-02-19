@@ -6,15 +6,21 @@ import { matchService } from '@/services/match.service';
 import { useMatchStore } from '@/store/matchStore';
 import MatchCard from '@/components/betting/MatchCard';
 import BetSlip from '@/components/betting/BetSlip';
-import { Activity, Trophy, Gamepad2, ChevronRight } from 'lucide-react';
+import BannerCarousel from '@/components/BannerCarousel';
+import { cn } from '@/lib/utils';
+
+type MainTab = 'cricket' | 'casino';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { liveMatches, upcomingMatches, setMatches } = useMatchStore();
+  const { matches, setMatches } = useMatchStore();
   const [loading, setLoading] = useState(true);
+  const [mainTab, setMainTab] = useState<MainTab>('cricket');
 
   useEffect(() => {
     loadMatches();
+    const interval = setInterval(loadMatches, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadMatches = async () => {
@@ -29,98 +35,71 @@ export default function DashboardPage() {
     }
   };
 
+  // Sort: LIVE first, then UPCOMING by startTime, then others
+  const sortedMatches = [...matches].sort((a, b) => {
+    const statusOrder: Record<string, number> = { LIVE: 0, UPCOMING: 1, COMPLETED: 2, CANCELLED: 3 };
+    const aOrder = statusOrder[a.status] ?? 9;
+    const bOrder = statusOrder[b.status] ?? 9;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+  });
+
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Quick access tabs */}
-      <div className="grid grid-cols-3 gap-2 p-3">
+    <div className="max-w-3xl mx-auto pb-20">
+      {/* Banner Carousel */}
+      <BannerCarousel />
+
+      {/* Cricket / Casino Tab Bar */}
+      <div className="grid grid-cols-2 bg-brand-teal-dark mx-0">
         <button
-          onClick={() => router.push('/inplay')}
-          className="flex items-center gap-2 bg-card rounded-lg p-3 border shadow-sm hover:shadow-md transition"
+          onClick={() => setMainTab('cricket')}
+          className={cn(
+            'flex items-center justify-center gap-2 py-3 text-sm font-bold transition',
+            mainTab === 'cricket'
+              ? 'bg-brand-teal text-white'
+              : 'text-white/60 hover:text-white/80'
+          )}
         >
-          <Activity className="w-5 h-5 text-inplay" />
-          <div className="text-left">
-            <p className="text-xs font-semibold text-foreground">In-Play</p>
-            <p className="text-[10px] text-muted-foreground">{liveMatches.length} live</p>
-          </div>
+          <span className="text-lg">🏏</span> Cricket
         </button>
         <button
-          onClick={() => router.push('/matches')}
-          className="flex items-center gap-2 bg-card rounded-lg p-3 border shadow-sm hover:shadow-md transition"
+          onClick={() => {
+            setMainTab('casino');
+            router.push('/casino');
+          }}
+          className={cn(
+            'flex items-center justify-center gap-2 py-3 text-sm font-bold transition',
+            mainTab === 'casino'
+              ? 'bg-brand-teal text-white'
+              : 'text-white/60 hover:text-white/80'
+          )}
         >
-          <Trophy className="w-5 h-5 text-brand-teal" />
-          <div className="text-left">
-            <p className="text-xs font-semibold text-foreground">Cricket</p>
-            <p className="text-[10px] text-muted-foreground">{upcomingMatches.length} upcoming</p>
-          </div>
-        </button>
-        <button
-          onClick={() => router.push('/casino')}
-          className="flex items-center gap-2 bg-card rounded-lg p-3 border shadow-sm hover:shadow-md transition"
-        >
-          <Gamepad2 className="w-5 h-5 text-brand-orange" />
-          <div className="text-left">
-            <p className="text-xs font-semibold text-foreground">Casino</p>
-            <p className="text-[10px] text-muted-foreground">Games</p>
-          </div>
+          <span className="text-lg">🎰</span> Casino
         </button>
       </div>
 
-      {/* Live matches */}
-      {liveMatches.length > 0 && (
-        <section className="px-3 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-              <Activity className="w-4 h-4 text-inplay" />
-              Live Matches
-            </h2>
-            <button
-              onClick={() => router.push('/inplay')}
-              className="text-xs text-brand-teal font-medium flex items-center gap-0.5"
-            >
-              View All <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {liveMatches.map((match) => (
-              <MatchCard key={match.id} match={match} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Cricket Section Header */}
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 border-b">
+        <span className="text-lg">🏏</span>
+        <span className="text-sm font-bold text-gray-800">Cricket</span>
+      </div>
 
-      {/* Upcoming matches */}
-      <section className="px-3 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-            <Trophy className="w-4 h-4 text-brand-teal" />
-            Upcoming Matches
-          </h2>
-          <button
-            onClick={() => router.push('/matches')}
-            className="text-xs text-brand-teal font-medium flex items-center gap-0.5"
-          >
-            View All <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
+      {/* Match List */}
+      <div className="px-2 py-2 space-y-2 bg-gray-100 min-h-[300px]">
         {loading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card rounded-lg border h-28 animate-pulse" />
-            ))}
-          </div>
-        ) : upcomingMatches.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            No upcoming matches
+          [1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-lg border h-24 animate-pulse" />
+          ))
+        ) : sortedMatches.length === 0 ? (
+          <div className="text-center py-16 text-gray-500 text-sm">
+            No cricket matches available
           </div>
         ) : (
-          <div className="space-y-2">
-            {upcomingMatches.slice(0, 10).map((match) => (
-              <MatchCard key={match.id} match={match} />
-            ))}
-          </div>
+          sortedMatches.map((match) => (
+            <MatchCard key={match.id} match={match} />
+          ))
         )}
-      </section>
+      </div>
 
       {/* Bet slip */}
       <BetSlip />

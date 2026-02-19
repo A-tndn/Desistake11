@@ -2,9 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useBetStore } from '@/store/betStore';
-import OddsBox from './OddsBox';
-import InplayIndicator from './InplayIndicator';
 import { cn } from '@/lib/utils';
+import { Tv } from 'lucide-react';
 
 interface MatchCardProps {
   match: {
@@ -35,7 +34,8 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
   const isLive = match.status === 'LIVE';
   const locked = match.bettingLocked || match.status === 'COMPLETED' || match.status === 'CANCELLED';
 
-  const handleOddsClick = (team: string, odds: number, isBack: boolean) => {
+  const handleOddsClick = (e: React.MouseEvent, team: string, odds: number, isBack: boolean) => {
+    e.stopPropagation();
     if (locked) return;
     addToBetSlip({
       matchId: match.id,
@@ -47,122 +47,82 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
     });
   };
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    }) + ', ' + d.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  // Build odds array: [team1Back, team1Lay, drawBack, drawLay, team2Back, team2Lay]
+  const oddsData = [
+    { team: match.team1, odds: match.team1BackOdds, isBack: true },
+    { team: match.team1, odds: match.team1LayOdds, isBack: false },
+    { team: 'DRAW', odds: match.drawBackOdds, isBack: true },
+    { team: 'DRAW', odds: match.drawLayOdds, isBack: false },
+    { team: match.team2, odds: match.team2BackOdds, isBack: true },
+    { team: match.team2, odds: match.team2LayOdds, isBack: false },
+  ];
+
   return (
     <div
-      className={cn(
-        'bg-card rounded-lg border shadow-sm overflow-hidden transition hover:shadow-md',
-        isLive && 'border-l-4 border-l-inplay'
-      )}
+      className="bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition"
+      onClick={() => router.push(`/matches/${match.id}`)}
     >
-      {/* Header: tournament + status */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-muted border-b">
-        <span className="text-[11px] text-muted-foreground truncate">
-          {match.tournament || 'Cricket'}
+      {/* Date + INPLAY badge + TV */}
+      <div className="px-3 pt-2.5 pb-1 flex items-center justify-between">
+        <span className="text-xs font-medium text-red-600">
+          {formatDate(match.startTime)}
         </span>
-        {isLive ? (
-          <InplayIndicator />
-        ) : match.status === 'UPCOMING' ? (
-          <span className="text-[10px] text-muted-foreground">
-            {new Date(match.startTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground">{match.status}</span>
-        )}
-      </div>
-
-      {/* Match info clickable → detail page */}
-      <div
-        className="px-3 py-2 cursor-pointer"
-        onClick={() => router.push(`/matches/${match.id}`)}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{match.team1}</p>
-            {match.team1Score && isLive && (
-              <p className="text-xs text-brand-teal font-semibold">{match.team1Score}</p>
-            )}
-          </div>
-          <span className="text-xs text-muted-foreground px-2">vs</span>
-          <div className="flex-1 min-w-0 text-right">
-            <p className="text-sm font-medium text-foreground truncate">{match.team2}</p>
-            {match.team2Score && isLive && (
-              <p className="text-xs text-brand-teal font-semibold">{match.team2Score}</p>
-            )}
-          </div>
+        <div className="flex items-center gap-1.5">
+          {isLive && (
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-xs font-bold text-red-600">INPLAY</span>
+            </div>
+          )}
+          <Tv className="w-4 h-4 text-gray-500" />
         </div>
       </div>
 
-      {/* Odds grid: 3 columns (team1, draw, team2), each with back+lay */}
+      {/* Match name */}
+      <div className="px-3 pb-2">
+        <p className="text-sm font-bold text-gray-900 leading-tight">{match.name}</p>
+      </div>
+
+      {/* 6 odds boxes in a row: Back/Lay x 3 (team1, draw, team2) */}
       {!compact && (
-        <div className="px-3 pb-2">
-          {/* Labels row */}
-          <div className="grid grid-cols-3 gap-1 mb-1">
-            <div className="text-center">
-              <span className="text-[9px] text-muted-foreground">{match.team1.split(' ').pop()}</span>
-            </div>
-            <div className="text-center">
-              <span className="text-[9px] text-muted-foreground">Draw</span>
-            </div>
-            <div className="text-center">
-              <span className="text-[9px] text-muted-foreground">{match.team2.split(' ').pop()}</span>
-            </div>
-          </div>
+        <div className="px-2.5 pb-2.5">
+          <div className="grid grid-cols-6 gap-1">
+            {oddsData.map((item, i) => {
+              const numOdds = item.odds != null ? Number(item.odds) : null;
+              const hasOdds = numOdds != null && numOdds > 0 && !isNaN(numOdds);
+              const isClickable = !locked && hasOdds;
 
-          {/* Odds boxes */}
-          <div className="grid grid-cols-3 gap-1">
-            {/* Team 1 */}
-            <div className="flex gap-0.5">
-              <OddsBox
-                odds={match.team1BackOdds}
-                isBack={true}
-                size="sm"
-                locked={locked}
-                onClick={() => match.team1BackOdds && handleOddsClick(match.team1, match.team1BackOdds, true)}
-              />
-              <OddsBox
-                odds={match.team1LayOdds}
-                isBack={false}
-                size="sm"
-                locked={locked}
-                onClick={() => match.team1LayOdds && handleOddsClick(match.team1, match.team1LayOdds, false)}
-              />
-            </div>
-
-            {/* Draw */}
-            <div className="flex gap-0.5">
-              <OddsBox
-                odds={match.drawBackOdds}
-                isBack={true}
-                size="sm"
-                locked={locked}
-                onClick={() => match.drawBackOdds && handleOddsClick('DRAW', match.drawBackOdds, true)}
-              />
-              <OddsBox
-                odds={match.drawLayOdds}
-                isBack={false}
-                size="sm"
-                locked={locked}
-                onClick={() => match.drawLayOdds && handleOddsClick('DRAW', match.drawLayOdds, false)}
-              />
-            </div>
-
-            {/* Team 2 */}
-            <div className="flex gap-0.5">
-              <OddsBox
-                odds={match.team2BackOdds}
-                isBack={true}
-                size="sm"
-                locked={locked}
-                onClick={() => match.team2BackOdds && handleOddsClick(match.team2, match.team2BackOdds, true)}
-              />
-              <OddsBox
-                odds={match.team2LayOdds}
-                isBack={false}
-                size="sm"
-                locked={locked}
-                onClick={() => match.team2LayOdds && handleOddsClick(match.team2, match.team2LayOdds, false)}
-              />
-            </div>
+              return (
+                <button
+                  key={i}
+                  onClick={isClickable ? (e) => handleOddsClick(e, item.team, numOdds!, item.isBack) : undefined}
+                  disabled={!isClickable}
+                  className={cn(
+                    'py-2 text-center text-sm font-bold rounded transition-all',
+                    item.isBack
+                      ? 'bg-back text-foreground hover:bg-back-dark'
+                      : 'bg-lay text-foreground hover:bg-lay-dark',
+                    !isClickable && 'opacity-60 cursor-default',
+                    isClickable && 'cursor-pointer active:scale-95',
+                  )}
+                >
+                  {hasOdds ? numOdds!.toFixed(2) : '-'}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

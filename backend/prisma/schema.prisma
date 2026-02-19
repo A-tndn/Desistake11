@@ -65,6 +65,16 @@ enum BetType {
   PARLAY
 }
 
+enum FancyMarketCategory {
+  SESSION
+  OVER_RUNS
+  PLAYER_RUNS
+  BOUNDARIES
+  WICKETS
+  EXTRAS
+  CUSTOM
+}
+
 enum BetStatus {
   PENDING
   WON
@@ -125,6 +135,7 @@ enum CasinoGameType {
   DICE_ROLL
   ROULETTE
   ANDAR_BAHAR
+  BLACKJACK
 }
 
 enum CasinoRoundStatus {
@@ -181,6 +192,7 @@ model User {
 
   // Sport Share & Commission
   sportSharePercent Decimal         @default(0) @db.Decimal(5, 2)
+  casinoOddsModifier Decimal        @default(0) @db.Decimal(5, 2)
   accountType       String          @default("STANDARD") // NOC, PREMIUM, VIP, STANDARD
 
   // Locks
@@ -365,9 +377,11 @@ model Match {
   // Additional Data
   manOfTheMatch     String?
   umpires           Json?
+  bookmakerSuspended Boolean        @default(false)
 
   // Betting
   bets              Bet[]
+  fancyMarkets      FancyMarket[]
   matchOddsHistory  MatchOddsHistory[]
   totalBetsAmount   Decimal         @default(0) @db.Decimal(12, 2)
   totalBetsCount    Int             @default(0)
@@ -422,6 +436,10 @@ model Bet {
   matchId           String
   match             Match           @relation(fields: [matchId], references: [id])
 
+  // Fancy Market (optional)
+  fancyMarketId     String?
+  fancyMarket       FancyMarket?    @relation(fields: [fancyMarketId], references: [id])
+
   // Bet Details
   betType           BetType
   betOn             String
@@ -454,9 +472,60 @@ model Bet {
 
   @@index([userId])
   @@index([matchId])
+  @@index([fancyMarketId])
   @@index([status])
   @@index([createdAt])
   @@map("bets")
+}
+
+model FancyMarket {
+  id                String              @id @default(uuid())
+
+  // Match reference
+  matchId           String
+  match             Match               @relation(fields: [matchId], references: [id])
+
+  // Market Details
+  marketName        String
+  category          FancyMarketCategory @default(SESSION)
+
+  // Odds
+  noValue           Decimal?            @db.Decimal(8, 2)
+  yesValue          Decimal?            @db.Decimal(8, 2)
+  noRate            Decimal?            @db.Decimal(8, 2)
+  yesRate           Decimal?            @db.Decimal(8, 2)
+
+  // Status
+  isSuspended       Boolean             @default(false)
+  isActive          Boolean             @default(true)
+  isSettled         Boolean             @default(false)
+
+  // Betting Limits
+  minBet            Decimal             @default(100) @db.Decimal(12, 2)
+  maxBet            Decimal             @default(25000) @db.Decimal(12, 2)
+
+  // Display
+  sortOrder         Int                 @default(0)
+
+  // Settlement
+  result            String?
+  settledAt         DateTime?
+  settledBy         String?
+
+  // Relations
+  bets              Bet[]
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([matchId])
+  @@index([category])
+  @@index([isActive])
+  @@index([isSettled])
+  @@index([createdAt])
+  @@map("fancy_markets")
 }
 
 model Transaction {

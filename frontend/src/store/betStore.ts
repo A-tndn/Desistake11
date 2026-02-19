@@ -10,6 +10,10 @@ export interface BetSlipItem {
   odds: number;
   isBack: boolean;
   amount: number;
+  // Fancy-specific fields
+  fancyMarketId?: string;
+  fancyMarketName?: string;
+  runValue?: number;
 }
 
 interface BetStore {

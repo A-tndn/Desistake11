@@ -10,6 +10,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import WelcomeBanner from '@/components/layout/WelcomeBanner';
 import ToastContainer from '@/components/notifications/ToastContainer';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import InactivityTimeout from '@/components/InactivityTimeout';
 import PageTransition from '@/components/PageTransition';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
@@ -54,6 +55,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       <BottomNav />
       <ToastContainer />
       <PWAInstallPrompt />
+      <InactivityTimeout />
     </div>
   );
 }

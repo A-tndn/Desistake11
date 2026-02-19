@@ -179,6 +179,27 @@ export const agentOnly = (req: AuthRequest, res: Response, next: NextFunction) =
 };
 
 /**
+ * Admin access middleware (agents OR master admin)
+ */
+export const adminAccess = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return errorResponse(res, 'Unauthorized', 401);
+  }
+
+  // Allow agents
+  if (req.user.type === 'agent') {
+    return next();
+  }
+
+  // Allow master admins and super admins
+  if (req.user.role === 'MASTER_ADMIN' || req.user.role === 'SUPER_ADMIN') {
+    return next();
+  }
+
+  return errorResponse(res, 'Forbidden: Admin access required', 403);
+};
+
+/**
  * Check if user's betting is locked
  */
 export const checkBetLock = async (req: AuthRequest, res: Response, next: NextFunction) => {

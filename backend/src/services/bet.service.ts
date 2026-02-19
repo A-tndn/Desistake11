@@ -16,6 +16,7 @@ interface PlaceBetData {
   amount: number;
   odds: number;
   isBack?: boolean;
+  fancyMarketId?: string;
   description?: string;
   ipAddress?: string;
   userAgent?: string;
@@ -118,6 +119,7 @@ class BetService {
           odds,
           potentialWin,
           isBack,
+          fancyMarketId: data.fancyMarketId || undefined,
           description,
           ipAddress,
           userAgent,

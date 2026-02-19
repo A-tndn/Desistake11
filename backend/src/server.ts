@@ -14,7 +14,9 @@ import { sanitizeRequest, additionalSecurityHeaders } from './middleware/securit
 import { startBetSettlementJob, startBetVoidJob } from './jobs/betSettlement.job';
 import { startWeeklySettlementJob, startMonthlySettlementJob } from './jobs/settlementGeneration.job';
 import { startNotificationCleanupJob } from './jobs/notificationCleanup.job';
-import { startMatchSyncJob } from './jobs/matchSync.job';
+import { startOddsScraperJob } from './jobs/oddsScraper.job';
+import { startScoreScraperJob } from './jobs/scoreScraper.job';
+import { startAutoSettlementJob } from './jobs/autoSettlement.job';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -29,6 +31,7 @@ import casinoRoutes from './routes/casino.routes';
 import notificationRoutes from './routes/notification.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import supportRoutes from './routes/support.routes';
+import fancyMarketRoutes from './routes/fancyMarket.routes';
 import agentBetRoutes from './routes/agent-bet.routes';
 
 const app: Application = express();
@@ -59,7 +62,7 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", ...(Array.isArray(config.corsOrigin) ? config.corsOrigin : [config.corsOrigin])],
+      connectSrc: ["'self'", 'wss:', 'ws:', ...(Array.isArray(config.corsOrigin) ? config.corsOrigin : [config.corsOrigin])],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -127,6 +130,7 @@ app.use('/api/v1/casino', casinoRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/support', supportRoutes);
+app.use('/api/v1', fancyMarketRoutes);
 app.use('/api/v1/agent-bets', agentBetRoutes);
 
 // 404 handler
@@ -194,7 +198,9 @@ const startServer = async () => {
     startWeeklySettlementJob();
     startMonthlySettlementJob();
     startNotificationCleanupJob();
-    startMatchSyncJob();
+    startOddsScraperJob();
+    startScoreScraperJob();
+    startAutoSettlementJob();
 
     // Start HTTP server
     httpServer.listen(config.port, () => {

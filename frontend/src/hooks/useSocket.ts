@@ -69,6 +69,90 @@ export function useSocket() {
     });
 
     // ============================================
+    // FANCY MARKET EVENTS (dispatched as custom events for page-level listeners)
+    // ============================================
+    socket.on('fancy:updated', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fancy:updated', { detail: data }));
+      }
+    });
+
+    socket.on('fancy:new', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fancy:new', { detail: data }));
+      }
+    });
+
+    socket.on('fancy:suspended', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fancy:suspended', { detail: data }));
+      }
+    });
+
+    socket.on('fancy:all-suspended', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fancy:all-suspended', { detail: data }));
+      }
+    });
+
+    socket.on('bookmaker:suspended', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('bookmaker:suspended', { detail: data }));
+      }
+    });
+
+    socket.on('fancy:settled', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fancy:settled', { detail: data }));
+      }
+    });
+
+    socket.on('fancy:bulk-update', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fancy:bulk-update', { detail: data }));
+      }
+    });
+
+    // ============================================
+    // BOOKMAKER UPDATES
+    // ============================================
+    socket.on('bookmaker:updated', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('bookmaker:updated', { detail: data }));
+      }
+    });
+
+    // ============================================
+    // BET VOID ALERTS (only fires when actual bets get voided due to wrong odds)
+    // ============================================
+    socket.on('bet:voided', (data: { betId: string; matchName: string; reason: string; refundAmount: string }) => {
+      addNotification({
+        type: 'warning',
+        title: 'Bet Voided',
+        message: `Your bet on ${data.matchName} was voided. Refund: ${data.refundAmount}. Reason: ${data.reason}`,
+        category: 'BETTING',
+        priority: 'HIGH',
+        actionUrl: '/bets',
+      });
+      addToast({
+        type: 'warning',
+        title: 'Bet Voided',
+        message: `Bet voided on ${data.matchName}. Refund: ${data.refundAmount}`,
+        duration: 8000,
+        actionUrl: '/bets',
+      });
+    });
+
+    // ============================================
+    // LIVE SCORE UPDATES
+    // ============================================
+    socket.on('score:updated', (data: any) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('score:updated', { detail: data }));
+      }
+    });
+
+    // ============================================
     // MATCH STATUS CHANGES
     // ============================================
     socket.on('match:status', (data: { matchId: string; status: string }) => {
